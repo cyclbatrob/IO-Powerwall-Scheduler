@@ -55,4 +55,9 @@ Other configuration options:
 # -----------------------------
 # Logging
 # -----------------------------
+Upon execution, a log file - IO-Update-Powerwall-Schedule.log - is created. In debug mode this gives more info, as well as output to the screen. In standard mode, it only adds to the log when anything has changed or errored.
 
+# -----------------------------
+# Hash File
+# -----------------------------
+To avoid updating the Tesla API every minute, a hash file is used to retain the fingerprint of the last update made by the script. If the hash remains the same, then the API to update the tariff is not called. Updates made via other means are not detected. To ignore the hash file and force an update, use the setting FORCE_UPDATE = True
