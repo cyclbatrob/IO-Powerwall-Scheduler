@@ -37,7 +37,7 @@ A default config file is created when the script is run for the first time or a 
 
 The config file contains all the config required for the script and is broken down into sections. As a MINIMUM, the following MUST be configured to enable the script to run:
  - TESSIE_API_KEY - can be found in the Tessie App under Settings -> Developer API
- - TESLA_Site_ID - 
+ - TESLA_Site_ID - is found by running Get-SiteID.py once the Tessie API key is configured in the config file.
  - OCTOPUS_API_KEY - can be found in the Octopus account section in octopus.energy
  - OCTOPUS_ACCOUNT_NUMBER - can be found in the Octopus account section in octopus.energy
 
