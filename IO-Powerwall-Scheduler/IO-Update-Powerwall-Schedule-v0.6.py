@@ -516,7 +516,7 @@ if(eventStart!=0 and eventEnd!=0 and export_rate>ONPEAK_SELL_RATE+SAVINGS_MIN_OF
   fillSlots(SLOT_SAVINGS, eventStart, eventEnd)
 
 freeStart, freeEnd = check_free_electricity.freeElectric()
-if(PARTICIPATE_FREE_ELECTRIC and freeEnd.astimezone(ZoneInfo("Europe/London"))>dateTimeToUse):
+if(PARTICIPATE_FREE_ELECTRIC and freeEnd.astimezone(ZoneInfo("Europe/London"))>dateTimeToUse  and (freeEnd.day==dateTimeToUse.day and freeEnd.month==dateTimeToUse.month)):
   fillSlots(SLOT_FREE, freeStart, freeEnd)
 
 outputJson = ""
