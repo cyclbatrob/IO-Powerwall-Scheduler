@@ -117,7 +117,7 @@ OCTOPUS_API_KEY sk_live_XXXXXXXXXXXXXXXXXXXXXXXX
 OCTOPUS_ACCOUNT_NUMBER A-99999999
 
 # Debugging Options. Uncomment as required. FORCE_UPDATE will update the Powerwall schedule regardless of any change, but READONLY takes precedence     
-DEBUG True
+#DEBUG True
 #READONLY True
 #FORCE_UPDATE True 
 
