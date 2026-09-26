@@ -275,8 +275,11 @@ def LogMsg(severity,message):
 
 # This file holds the hash of the last known "outputJSON" which is the off-peak slots.
 # It just lets us know whether the slots have changed from each execution so we're not persistently updating the Tesla API with no changes
+# It is per Powerwall site - when running multiple sites (config files) from the same folder, a shared hash file means the
+# second site sees the first site's hash, thinks nothing has changed, and never gets updated
+HASH_FILE = "IO-Changed-Hash-"+teslasiteid
 try:
-   f = open("IO-Changed-Hash","r")
+   f = open(HASH_FILE,"r")
    changedHash = f.read().strip("\n")
    if DEBUG:
       print("Hash read from file: "+changedHash)
@@ -747,7 +750,7 @@ def sendData(teslasiteid,tessieapikey,teslaurl,OctopusTimeSlot):
            if(int(r.status_code) == 200):
               LogMsg("INFO","Successfully updated Tesla Powerwall schedule")
               # Update the IO changed hash file with the latest hash
-              f = open("IO-Changed-Hash","w")
+              f = open(HASH_FILE,"w")
               f.write(newHash)
               f.close()
               if DEBUG:
