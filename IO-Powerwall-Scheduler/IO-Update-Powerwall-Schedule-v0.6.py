@@ -52,6 +52,7 @@ FORCEUPDATE = False # To be used if needing to force an update to the Powerwall.
 DEBUG = False
 LOG_FILE = "IO-Update-Powerwall-Schedule.log"
 CONFIG_FILE = "config.txt"
+HASH_FILE = "" # Set by HASHFILE in the config file - defaults to IO-Changed-Hash-<TESLA_SITE_ID>
 ENABLE_PRECONDITION = False
 
 # Defaut tariff rates - buy and sell (£) - we default savings to £0.00 because it's variable, but we need something in there
@@ -116,6 +117,10 @@ TESLA_SITE_ID XXXXXXXXXXXXXXXX
 OCTOPUS_API_KEY sk_live_XXXXXXXXXXXXXXXXXXXXXXXX
 OCTOPUS_ACCOUNT_NUMBER A-99999999
 
+# File holding the hash of the last schedule sent to the Powerwall. MUST be different for each site/config file.
+# Defaults to IO-Changed-Hash-<TESLA_SITE_ID> if not set
+#HASHFILE IO-Changed-Hash-MySite
+
 # Debugging Options. Uncomment as required. FORCE_UPDATE will update the Powerwall schedule regardless of any change, but READONLY takes precedence     
 #DEBUG True
 #READONLY True
@@ -163,6 +168,8 @@ for line in f:
       tessieapikey = linesplit[1]
     elif(linesplit[0] == "TESLA_SITE_ID"):
       teslasiteid = linesplit[1]
+    elif(linesplit[0] == "HASHFILE"):
+      HASH_FILE = linesplit[1]
     elif(linesplit[0] == "OCTOPUS_API_KEY"):
       apikey = linesplit[1]
     elif(linesplit[0] == "OCTOPUS_ACCOUNT_NUMBER"):
@@ -275,9 +282,12 @@ def LogMsg(severity,message):
 
 # This file holds the hash of the last known "outputJSON" which is the off-peak slots.
 # It just lets us know whether the slots have changed from each execution so we're not persistently updating the Tesla API with no changes
-# It is per Powerwall site - when running multiple sites (config files) from the same folder, a shared hash file means the
-# second site sees the first site's hash, thinks nothing has changed, and never gets updated
-HASH_FILE = "IO-Changed-Hash-"+teslasiteid
+# It must be per Powerwall site - when running multiple sites (config files) from the same folder, a shared hash file means
+# the second site sees the first site's hash, thinks nothing has changed, and never gets updated
+if(HASH_FILE == ""):
+   HASH_FILE = "IO-Changed-Hash-"+teslasiteid
+if DEBUG:
+   print("Using Hash File: "+HASH_FILE)
 try:
    f = open(HASH_FILE,"r")
    changedHash = f.read().strip("\n")
