@@ -168,9 +168,9 @@ for line in f:
     elif(linesplit[0] == "OCTOPUS_ACCOUNT_NUMBER"):
       accountNumber = linesplit[1]
     elif(linesplit[0] == "FREE_ELECTRIC"):
-      PARTICIPATE_FREE_ELECTRIC = linesplit[1]
+      PARTICIPATE_FREE_ELECTRIC = (linesplit[1].lower() == "true")
     elif(linesplit[0] == "SAVINGS_SESSIONS"):
-      PARTICIPATE_SAVING_SESSIONS = linesplit[1]
+      PARTICIPATE_SAVING_SESSIONS = (linesplit[1].lower() == "true")
     elif(linesplit[0] == "DEBUG"):
       DEBUG = linesplit[1]
     elif(linesplit[0] == "READONLY"):
@@ -512,12 +512,21 @@ for entry in times:
 #fillSlots(SLOT_SAVINGS, datetime.strptime("2024-11-17 17:30:00",'%Y-%m-%d %H:%M:%S'), datetime.strptime("2024-11-17 18:30:00",'%Y-%m-%d %H:%M:%S'))
 
 # If we have a valid savings event, and the rate offered is greater than the current onpeak rate + offset, then add the slot
-if(eventStart!=0 and eventEnd!=0 and export_rate>ONPEAK_SELL_RATE+SAVINGS_MIN_OFFSET and PARTICIPATE_SAVING_SESSIONS):
+if(PARTICIPATE_SAVING_SESSIONS and eventStart!=0 and eventEnd!=0 and float(exportPrice)>float(ONPEAK_SELL_RATE)+float(SAVINGS_MIN_OFFSET)):
   fillSlots(SLOT_SAVINGS, eventStart, eventEnd)
 
-freeStart, freeEnd = check_free_electricity.freeElectric()
-if(PARTICIPATE_FREE_ELECTRIC and freeEnd.astimezone(ZoneInfo("Europe/London"))>dateTimeToUse  and (freeEnd.day==dateTimeToUse.day and freeEnd.month==dateTimeToUse.month)):
-  fillSlots(SLOT_FREE, freeStart, freeEnd)
+# Only add the free session if it's today and hasn't finished yet. Once it has finished (or can't be found) it is left out,
+# which changes the hash and pushes a schedule without the free period, clearing it from the Powerwall
+if(PARTICIPATE_FREE_ELECTRIC):
+  freeStart, freeEnd = check_free_electricity.freeElectric()
+  if(freeStart is not None and freeEnd is not None):
+    freeStart = freeStart.astimezone(ZoneInfo("Europe/London"))
+    freeEnd = freeEnd.astimezone(ZoneInfo("Europe/London"))
+    timeNowLondon = datetime.now(ZoneInfo("Europe/London"))
+    if DEBUG:
+      print("Free Electricity Session: "+str(freeStart)+" -> "+str(freeEnd))
+    if(freeEnd>timeNowLondon and freeEnd.date()==timeNowLondon.date()):
+      fillSlots(SLOT_FREE, freeStart, freeEnd)
 
 outputJson = ""
 onPeakJson = ""
