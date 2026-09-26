@@ -637,10 +637,9 @@ if DEBUG:
    print("Octopus Free Time Slot JSON: \n"+OctopusFreeTimeSlot)
    print("Octopus Savings Time Slot JSON: \n"+OctopusSavingsTimeSlot)
 
-def sendData(teslasiteid,tessieapikey,teslaurl,OctopusTimeSlot):
-    try:
-#       Build query 
-        query1 = """
+# Builds the full payload sent to the Tessie API
+def buildPayload(OctopusTimeSlot):
+    query1 = """
       "code": "(edited)",
       "name": "Intelligent Octopus Go",
       "utility": "Octopus",
@@ -682,7 +681,7 @@ def sendData(teslasiteid,tessieapikey,teslaurl,OctopusTimeSlot):
           "toMonth": 12,
           "tou_periods": { """
 
-        query2 =  """          }
+    query2 =  """          }
         },
         "Winter": {}
       },
@@ -727,7 +726,7 @@ def sendData(teslasiteid,tessieapikey,teslaurl,OctopusTimeSlot):
             "toMonth": 12,
             "tou_periods": {  """
 
-        query3 = """            }
+    query3 = """            }
           },
           "Winter": {}
         }
@@ -735,12 +734,16 @@ def sendData(teslasiteid,tessieapikey,teslaurl,OctopusTimeSlot):
       "version": 1
       }
         """
-        fullquery = "{\n \"tou_settings\": {\n \"tariff_content_v2\": {"+query1+OctopusTimeSlot+query2+OctopusTimeSlot+query3+"\n}\n }"
+    fullquery = "{\n \"tou_settings\": {\n \"tariff_content_v2\": {"+query1+OctopusTimeSlot+query2+OctopusTimeSlot+query3+"\n}\n }"
+    return fullquery
+
+def sendData(tessieapikey,teslaurl,fullquery,newHash):
+    try:
         if DEBUG:
            print("Powerwall Schedule Update Query: \n"+fullquery)
         headers={"Content-Type": "application/json","Authorization": "Bearer "+tessieapikey}
         if DEBUG:
-           print("Headers: "+headers)
+           print("Headers: "+str(headers))
            print("Powerwall Update URL: "+teslaurl)
         if not READONLY:
            r = requests.post(teslaurl,fullquery,headers=headers)
@@ -756,27 +759,27 @@ def sendData(teslasiteid,tessieapikey,teslaurl,OctopusTimeSlot):
               if DEBUG:
                 print("Updated new hash into changed hash file: "+newHash)
            else:
-              LogMsg("ERROR","Failed to update Tesla Powerwall API. Code: "+r.status_code+" - Message: "+r.reason)
+              LogMsg("ERROR","Failed to update Tesla Powerwall API. Code: "+str(r.status_code)+" - Message: "+r.reason)
            return json.loads(r.text)['data']
     except HTTPError as http_err:
         print(f'HTTP Error {http_err}')
     except Exception as err:
         print(f'Another error occurred: {err}')
 
-# Create the new hash based on our timeslot data
-newHash = OctopusOffPeakTimeSlot+OctopusOnPeakTimeSlot+OctopusFreeTimeSlot+OctopusSavingsTimeSlot
-newHash = str(hashlib.sha256(newHash.encode()).hexdigest())
+# Build the payload and hash the whole thing, so any change to what we'd send (slots or rates) triggers an update
+fullquery = buildPayload(OctopusOffPeakTimeSlot+OctopusOnPeakTimeSlot+OctopusFreeTimeSlot+OctopusSavingsTimeSlot)
+newHash = str(hashlib.sha256(fullquery.encode()).hexdigest())
 if DEBUG:
    print("Old Hash: >"+changedHash+"<\n")
    print("New Hash: >"+newHash+"<\n")
-# If there has been a change in the slots, we will update the Tesla API. 
+# If there has been a change in the payload, we will update the Tesla API. 
 if changedHash != newHash or FORCEUPDATE:
    if DEBUG:
-      print("Change in slots, update the Tesla API")
-      LogMsg("DEBUG","Change in slots, update the Tesla API")
-   sendData(teslasiteid,tessieapikey,teslaurl,OctopusOffPeakTimeSlot+OctopusOnPeakTimeSlot+OctopusFreeTimeSlot+OctopusSavingsTimeSlot)
+      print("Change in schedule, update the Tesla API")
+      LogMsg("DEBUG","Change in schedule, update the Tesla API")
+   sendData(tessieapikey,teslaurl,fullquery,newHash)
 else:
-   print("No change in slots. Do nothing")
+   print("No change in schedule. Do nothing")
    if DEBUG:
-     LogMsg("DEBUG","No change in slots. Do nothing")
+     LogMsg("DEBUG","No change in schedule. Do nothing")
 
